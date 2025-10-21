@@ -1,20 +1,24 @@
-import fetch from "node-fetch";
+// Vercel-ready backend for LG AI
+
+// Use dynamic import to avoid ESM/CommonJS issues
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { prompt, tone } = req.body;
+  const OPENAI_KEY = process.env.OPENAI_KEY;
+
+  if (!OPENAI_KEY) return res.status(500).json({ reply: "Missing OpenAI key" });
 
   try {
-    const OPENAI_KEY = process.env.OPENAI_KEY;
-
     const systemPrompt = `You are LG AI, a highly articulate, sophisticated AI assistant. Respond in ${tone} style.`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
+        "Authorization": `Bearer ${OPENAI_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
@@ -23,7 +27,7 @@ export default async function handler(req, res) {
           { role: "user", content: prompt }
         ],
         max_tokens: 600
-      }),
+      })
     });
 
     const data = await response.json();
